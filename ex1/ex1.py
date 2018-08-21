@@ -53,7 +53,7 @@ brow = cv2.erode(result, kernel,iterations = 1)
 mask = cv2.inRange(brow, lower, upper)
 brow = cv2.bitwise_and(img, img, mask= mask)
 paintArea(brow, [0, 76, 153])
-# another brown 
+# red
 lower = np.array([3,50,150])
 upper = np.array([7,255,255])
 mask = cv2.inRange(result, lower, upper)
