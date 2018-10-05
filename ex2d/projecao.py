@@ -25,15 +25,15 @@ class Projecao:
 	# retorna coordenada do pixel [pixel]
 		pixel = np.zeros(shape=(2, len(p[0])))
 		for i in range(len(p[0])):
-			pixel[0][i] = -int(p[0][i])/sx + ox 
-			pixel[1][i] = -int(p[1][i])/sy + oy
+			pixel[0][i] = -int(p[0][i]/sx + ox) 
+			pixel[1][i] = -int(p[1][i]/sy + oy)
 		return pixel
 
 	def printMatrix(self, matrix):
-		fmt ='{:>7}'
+		fmt ='{:>4}'
 		for i in range(len(matrix)):
 			for j in range(len(matrix[0])):
-				value = '{:5.3f}'.format(matrix[i][j])
+				value = '{:5.1f}'.format(matrix[i][j])
 				print (fmt.format(value), end=" ")
 			print("")			
 
@@ -73,7 +73,7 @@ class Projecao:
 
 		H = [[cz*cy, -1*sz*cx+cz*sy*sx, sz*sx+cz*sy*cx,  -1*dx],
 			 [sz*cy, cz*cx+sz*sy*sx,  -cz*sx+sz*sy*cx, -1*dy],
-			 [-1*sy,   cy*sx,           cx*cy,           -1*dy]]
+			 [-1*sy,   cy*sx,           cx*cy,           -1*dz]]
 		return H
 
 	##################################################################
