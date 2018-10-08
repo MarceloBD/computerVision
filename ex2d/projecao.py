@@ -1,7 +1,7 @@
 from copy import copy
 import math 
 import numpy as np
-
+import cv2 as cv2
 
 class Projecao:
 
@@ -99,4 +99,17 @@ class Projecao:
 			Pp[1][point] = lin_val
 			Pp[2][point] = 0
 		return Pp
+
+
+	def print_in_screen(self, matrix):
+		img = np.zeros((600, 600, 3), np.uint8)
+		for i in range(len(matrix)):
+			for j in range(len(matrix[0])):
+				matrix[i][j] = abs(matrix[i][j])
+		for i in range(len(matrix[0])):
+			img = cv2.circle(img, tuple(map(int, matrix[:, i])), 3, (255, 255, 255))
+		cv2.imwrite('rectangle.jpg', img)
+		cv2.imshow('img', img)
+		k = cv2.waitKey(0) 
+
 
