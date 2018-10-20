@@ -146,13 +146,70 @@ class Projecao:
 	#	hx = self.homogenea(rotx, roty, rotz, dx, dy, dz)
 	#	px = self.mundo_para_camera(p, hx)
 
+	###########################################################
+
+	def solucao_linear(self, A, b):
+		A_transposta = np.matrix.transpose(A)
+		u, s, v =  np.linalg.svd(np.matmul(A_transposta,A)) 
+	
+		x = v[:,len(v[0])-1]
+		#pseudo_inversa = np.matmul(np.linalg.inv(s), np.matrix.transpose(u))
+		#pseudo_inversa = np.linalg.pinv(np.matmul(A_transposta, A))
+		#x = np.matmul(pseudo_inversa, A_transposta).dot(b)
+		return x
+
+	def achar_lambda_alpha_v(self, Pcal, pontos_proj):
+		A= np.empty((0,8), float)
+
+		for i in range(len(Pcal[0])):
+			x = pontos_proj[0, i]
+			y = pontos_proj[1, i]
+			Xw = Pcal[0, i] 
+			Yw = Pcal[1, i] 
+			Zw = Pcal[2, i] 
+			A_line = np.array([[x*Xw, x*Yw, x*Zw, x, -y*Xw, -y*Yw, -y*Zw, -y]])
+			A = np.append(A, A_line, axis=0) 
+		v_solucao = self.solucao_linear(A, np.zeros(len(Pcal[0])))
+
+		lambda_abs = np.sqrt(v_solucao[0]**2+v_solucao[1]**2+v_solucao[2]**2)
+		alpha = np.sqrt(v_solucao[4]**2+v_solucao[5]**2+v_solucao[6]**2)/lambda_abs
+		return [lambda_abs, alpha, v_solucao]
+	
+	def solucao_axb(self, A, b):
+		A_transposta = np.matrix.transpose(A)
+		pseudo_inversa = np.linalg.pinv(np.matmul(A_transposta, A))
+		return (np.matmul(pseudo_inversa, A_transposta).dot(b))
+
+	def achar_tz_fx(self, Pcal, pontos_proj, r_matrix):
+		A =  np.empty((0,2), float)
+		b = np.empty((0,1), float)
+		Tx = 0 
+		for i in range(len(Pcal)):
+			x = pontos_proj[0, i]
+			Xw = Pcal[0, i] 
+			Yw = Pcal[1, i] 
+			Zw = Pcal[2, i]
+			A_line = np.array([[x, r_matrix[0,0]*Xw+r_matrix[0,1]*Yw+r_matrix[0,2]*Zw+Tx]])
+			b_line = np.array([[-x*(r_matrix[2,0]*Xw+r_matrix[2,1]*Yw+r_matrix[2,2]*Zw)]])
+			A = np.append(A, A_line, axis=0)
+			b = np.append(b, b_line, axis=0)
+		return self.solucao_axb(A, b)
 
 
+	def calibracao(self, Pcal, Ical):
+		[f, sx, sy, ox, oy] = Ical
 
+		pontos_proj = self.proj_perspectiva_pixel(Pcal, sx, sy, ox, oy)
 
+		lambda_abs, alpha, v_solucao = self.achar_lambda_alpha_v(Pcal, pontos_proj)	
 
+		lambda_abs_alpha = lambda_abs*alpha
+		r_matrix = [[ v_solucao[4]/lambda_abs_alpha, v_solucao[5]/lambda_abs_alpha, v_solucao[6]/lambda_abs_alpha],
+					[v_solucao[0]/lambda_abs, v_solucao[1]/lambda_abs, v_solucao[2]/lambda_abs]]
+		r_third_row = np.cross(r_matrix[0], r_matrix[1])
+		r_matrix = np.vstack((r_matrix, r_third_row))
 
+		print(r_matrix)
 
-
-
+		print(self.achar_tz_fx(Pcal, pontos_proj, r_matrix))
 
