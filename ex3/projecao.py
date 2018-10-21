@@ -147,7 +147,7 @@ class Projecao:
 	#	px = self.mundo_para_camera(p, hx)
 
 	###########################################################
-
+	'''
 	def solucao_linear(self, A, b):
 		A_transposta = np.matrix.transpose(A)
 		u, s, v =  np.linalg.svd(np.matmul(A_transposta,A)) 
@@ -197,11 +197,8 @@ class Projecao:
 
 
 	def calibracao(self, Pcal, Ical):
-		[f, sx, sy, ox, oy] = Ical
 
-		pontos_proj = self.proj_perspectiva_pixel(Pcal, sx, sy, ox, oy)
-
-		lambda_abs, alpha, v_solucao = self.achar_lambda_alpha_v(Pcal, pontos_proj)	
+		lambda_abs, alpha, v_solucao = self.achar_lambda_alpha_v(Pcal, Ical)	
 
 		lambda_abs_alpha = lambda_abs*alpha
 		r_matrix = [[ v_solucao[4]/lambda_abs_alpha, v_solucao[5]/lambda_abs_alpha, v_solucao[6]/lambda_abs_alpha],
@@ -211,5 +208,63 @@ class Projecao:
 
 		print(r_matrix)
 
-		print(self.achar_tz_fx(Pcal, pontos_proj, r_matrix))
+		print(self.achar_tz_fx(Pcal, Ical, r_matrix))
+	'''
+	###################################################################################################################
 
+
+	def resolver_Amb(self, A):
+		A_transposta = np.matrix.transpose(A)
+		u, s, v =  np.linalg.svd(np.matmul(A_transposta,A)) 
+		m = v[:,len(v[0])-1]
+		return m
+
+	def construir_A(self, Pcal, Ical):
+		A =  np.empty((0,12), float)
+		for i in range(len(Pcal)):
+			x = Ical[0, i]
+			y = Ical[1, i]
+			Xw = Pcal[0, i] 
+			Yw = Pcal[1, i] 
+			Zw = Pcal[2, i]
+			A_line1 = np.array([[Xw, Yw, Zw, 1, 
+								0, 0, 0, 0,
+								-x*Xw, -x*Yw, -x*Zw, -x]])
+			A_line2 = np.array([[0, 0, 0, 0,
+								Xw, Yw, Zw, 1, 
+								-y*Xw, -y*Yw, -y*Zw, -y]])
+			A = np.append(A, A_line1, axis=0)
+			A = np.append(A, A_line2, axis=0)
+		return A 
+
+	def calibracao(self, Pcal, Ical):
+		A = self.construir_A(Pcal, Ical)
+		m = self.resolver_Amb(A)
+
+		
+		lambda_abs = np.sqrt(m[9]**2+ m[10]**2+ m[11]**2)
+		print(m)
+		print(lambda_abs)
+
+		for i in range(12):
+			m[i] = m[i]/lambda_abs
+
+		[q1, q2, q3, q4] = [ [m[0], m[1], m[2]],
+						   [m[3], m[4], m[5]],
+						   [m[6], m[7], m[8]],
+						   [m[9], m[10], m[11]]]
+		ox = np.array(q1).dot(q3)
+		oy = np.array(q2).dot(q3)
+		fx = np.sqrt(np.array(q1).dot(q1)-ox**2)
+		fy = np.sqrt(np.array(q2).dot(q2)-oy**2)
+		print(ox, oy, fx, fy)
+
+
+
+		r_matrix = [[(m[0]-ox*m[8])/(-fx), (m[1]-ox*m[9])/(-fx), (m[2]-ox*m[10])/(-fx)],
+					[(m[4]-oy*m[8])/(-fy), (m[5]-oy*m[9])/(-fy), (m[6]-oy*m[10])/(-fy)],
+					[m[8], m[9], m[10]]]
+
+		T = [ (m[3]-ox*m[11])/(-fx), (m[7]-oy*m[11])/(-fy), m[11]]
+
+		print(T)
