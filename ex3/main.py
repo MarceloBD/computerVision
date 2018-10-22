@@ -10,7 +10,7 @@ if __name__ == '__main__':
 	#proj.printMatrix(pontos)
 
 	[f, sx, sy, ox, oy] = [16, 0.01, 0.01, 320, 240]
-	rotx, roty, rotz, dx, dy, dz = [0 , 0, 0, 10, 10 ,100]
+	rotx, roty, rotz, dx, dy, dz = [0 , 0, 0, 5, 5 ,100]
 	
 	H = proj.homogenea(rotx, roty, rotz, dx, dy, dz)
 	print(pontos.shape)
