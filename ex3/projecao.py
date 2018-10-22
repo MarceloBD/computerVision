@@ -240,20 +240,28 @@ class Projecao:
 
 	def calibracao(self, Pcal, Ical):
 		A = self.construir_A(Pcal, Ical)
+		
 		m = self.resolver_Amb(A)
 
+	#	Pcal = np.append(Pcal, [np.ones(len(Pcal[0]))], axis=0)
+#		Ical = np.append(Ical, [np.ones(len(Ical[0]))], axis=0)
+#		m = np.matmul(Ical, np.linalg.pinv(Pcal))
+#		m = np.reshape(m, (12))
 
-		lambda_abs = np.sqrt(m[8]**2+ m[9]**2+ m[10]**2)
-		print(m)
-		print(lambda_abs)
 
-	#	for i in range(12):
-	#		m[i] = m[i]/lambda_abs
+		print('m', m)
+		gamma_abs = np.sqrt(m[8]**2+ m[9]**2+ m[10]**2)
+	
+		print(gamma_abs)
 
+		for i in range(12):
+			m[i] = m[i]/gamma_abs
+
+		print('m n', m)
 		[q1, q2, q3, q4] = [ [m[0], m[1], m[2]],
-						   [m[3], m[4], m[5]],
-						   [m[6], m[7], m[8]],
-						   [m[9], m[10], m[11]]]
+						   [m[4], m[5], m[6]],
+						   [m[8], m[9], m[10]],
+						   [m[3], m[7], m[11]]]
 		ox = np.array(q1).dot(q3)
 		oy = np.array(q2).dot(q3)
 		fx = np.sqrt(np.array(q1).dot(q1)-ox**2)
