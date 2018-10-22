@@ -215,13 +215,14 @@ class Projecao:
 
 	def resolver_Amb(self, A):
 		A_transposta = np.matrix.transpose(A)
-		u, s, v =  np.linalg.svd(np.matmul(A_transposta,A)) 
+		u, s, vt =  np.linalg.svd(np.matmul(A_transposta,A)) 
+		v = np.matrix.transpose(vt)
 		m = v[:,len(v[0])-1]
 		return m
 
 	def construir_A(self, Pcal, Ical):
 		A =  np.empty((0,12), float)
-		for i in range(len(Pcal)):
+		for i in range(len(Pcal[0])):
 			x = Ical[0, i]
 			y = Ical[1, i]
 			Xw = Pcal[0, i] 
@@ -241,13 +242,13 @@ class Projecao:
 		A = self.construir_A(Pcal, Ical)
 		m = self.resolver_Amb(A)
 
-		
-		lambda_abs = np.sqrt(m[9]**2+ m[10]**2+ m[11]**2)
+
+		lambda_abs = np.sqrt(m[8]**2+ m[9]**2+ m[10]**2)
 		print(m)
 		print(lambda_abs)
 
-		for i in range(12):
-			m[i] = m[i]/lambda_abs
+	#	for i in range(12):
+	#		m[i] = m[i]/lambda_abs
 
 		[q1, q2, q3, q4] = [ [m[0], m[1], m[2]],
 						   [m[3], m[4], m[5]],
@@ -257,14 +258,15 @@ class Projecao:
 		oy = np.array(q2).dot(q3)
 		fx = np.sqrt(np.array(q1).dot(q1)-ox**2)
 		fy = np.sqrt(np.array(q2).dot(q2)-oy**2)
-		print(ox, oy, fx, fy)
-
+		print('ox oy fx fy',ox, oy, fx, fy)
 
 
 		r_matrix = [[(m[0]-ox*m[8])/(-fx), (m[1]-ox*m[9])/(-fx), (m[2]-ox*m[10])/(-fx)],
 					[(m[4]-oy*m[8])/(-fy), (m[5]-oy*m[9])/(-fy), (m[6]-oy*m[10])/(-fy)],
 					[m[8], m[9], m[10]]]
 
+
+		self.printMatrix(r_matrix)
 		T = [ (m[3]-ox*m[11])/(-fx), (m[7]-oy*m[11])/(-fy), m[11]]
 
 		print(T)
