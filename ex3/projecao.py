@@ -278,3 +278,4 @@ class Projecao:
 		T = [ (m[3]-ox*m[11])/(-fx), (m[7]-oy*m[11])/(-fy), m[11]]
 
 		print(T)
+		return [ox, oy, fx, fy, r_matrix, T]
