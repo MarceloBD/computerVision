@@ -15,7 +15,7 @@ class Projecao:
 		for i in range(len(P[0])):
 			p[0][i] = f*P[0][i]/float(P[2][i])
 			p[1][i] = f*P[1][i]/float(P[2][i])
-			p[2][i] = f
+			p[2][i] = P[2][i]/float(f)
 		return p
 
 	def proj_perspectiva_pixel(self, p, sx, sy, ox, oy):
@@ -24,11 +24,13 @@ class Projecao:
 	# @sy dimensao vertical do pixel [mm/pixel]
 	# @ox coordenada de projecao do eixo optico [pixel]
 	# retorna coordenada do pixel [pixel]
+		z = pixel = np.zeros(shape=(1, len(p[0]))) 
 		pixel = np.zeros(shape=(2, len(p[0])))
 		for i in range(len(p[0])):
 			pixel[0][i] = -int(p[0][i]/sx + ox) 
 			pixel[1][i] = -int(p[1][i]/sy + oy)
-		return pixel
+			z[0][i] = p[2][i]
+		return pixel, z
 
 	def printMatrix(self, matrix):
 		fmt ='{:>4}'
@@ -211,16 +213,22 @@ class Projecao:
 			[-ty, tx, 0]]
 		return np.matmul(r,s)
 
-	def calcular_matriz_fundamental(self, pl, pr):
+	def estimar_matriz_fundamental(self, pl, pr,e ):
 		A =  np.empty((0,9), float)
 		for p in range(len(pl[0])):
 			A_line = np.array([[pl[0][p]*pr[0][p], pl[0][p]*pr[1][p], pl[0][p], pl[1][p]*pr[0][p], pl[1][p]*pr[1][p], pl[1][p], pr[0][p], pr[1][p], 1]])
 			A = np.append(A, A_line, axis=0)
 		f = self.resolver_Amb2(A)
 		f = f.reshape(3,3)
+#		m = [[16, 0, 0],[0,16,0],[0,0,1]]
+#		return np.matmul(np.linalg.inv(m), np.matmul(e,np.linalg.inv(m)))
+		return f
+	
+	def calcular_matriz_fundamental(self, pl, pr,e ):
+		m = [[16/0.01, 0, 0],[0,16/0.01,0],[0,0,1]]
+		return np.matmul(np.linalg.inv(m), np.matmul(e,np.linalg.inv(m)))
 		return f
 
-	
 	def resolver_Amb2(self, A):
 		u, s, vt =  np.linalg.svd(A) 
 		v = np.matrix.transpose(vt)
@@ -228,34 +236,58 @@ class Projecao:
 		return m	
 
 	def epipolo_esquerda(self, f):
-		e = self.resolver_Amb(f)
+		[d, v] = np.linalg.eig(np.matmul(f, np.matrix.transpose(f))) 
+		e = v[:,0]/v[2,0]
+		#e = self.resolver_Amb2(f)	
 		return e
 
 	def epipolo_direita(self, f):
-		A_transposta = np.matrix.transpose(f)
-		u, s, vt =  np.linalg.svd(np.matmul(A_transposta,f)) 
-		e = u[:,len(u[0])-1]
+		[d, v] = np.linalg.eig(np.matmul(np.matrix.transpose(f), f)) 
+		e = v[:,0]/v[2,0]
+		#A_transposta = np.matrix.transpose(f)
+		#u, s, vt =  np.linalg.svd(f) 
+		#e = u[:,len(u[0])-1]
 		return e	
 
 	def linha_epipolar_esquerda(self, f, pl):
 		l = np.empty((0,3), float)
 		pl = np.vstack([pl, np.ones(len(pl[0]))])
 		for index in range(len(pl[0])):
-			l = np.append(l ,np.matmul(f, pl[:,index]))
+			l = np.append(l, np.matmul(f, pl[:,index]))
+			l = l/l[2]
+		x = np.arange(600) 
+		y = -l[0]/l[1]*x- l[2]/l[1]
+		return x, y
+
+	def linha_epipolar_direita(self, f, pr):
+		l = np.empty((0,3), float)
+		pr = np.vstack([pr, np.ones(len(pr[0]))])
+		for index in range(len(pr[0])):
+			l = np.append(l, np.matmul(pr[:,index], f))
+			l = l/l[2]
+		x = np.arange(600) 
+		y = -l[0]/l[1]*x - l[2]/l[1]
+		return x, y
+
 
 	def achar_o_camera(self, h):
 		o = self.mundo_para_camera([[0],[0],[0]],h)
 		return o
 
+	def achar_w_triangularizacao(self, pl, pr, r):
+		pl = np.append(pl, -6.25)
+		pr = np.append(pr, -6.25)
+		return np.cross(pl, np.matmul(np.matrix.transpose(r), pr))
+
 	def achar_r_triangularizacao(self, rl, rr):
-		return np.matmul(rl, np.matrix.transpose(rr))
+		return np.matmul(rr, np.matrix.transpose(rl))
 
 	def achar_t_triangularizacao(self, r, tl, tr):
 		return tl - np.matmul(np.matrix.transpose(r), tr)
 
 	def achar_abc_triangularizacao(self, pl, pr, r, t):
-		pl = np.append(pl, 1)
-		pr = np.append(pr, 1)
+		pl = np.append(pl, -6.25)
+		pr = np.append(pr, -6.25)
 		rt = np.matrix.transpose(r)
 		A = np.empty((0,3), float)
 		for i in range(3):
@@ -264,7 +296,3 @@ class Projecao:
 		abc = np.linalg.solve(A,t)
 		print(abc)
 		return abc 
-
-
-
-
