@@ -90,8 +90,45 @@ if __name__ == '__main__':
 
 	w = proj.achar_w_triangularizacao(pontos_proj_l[:,10], pontos_proj_r[:,10], r)
 
-	pontos_proj_l = np.append(pontos_proj_l,  [100*16*np.ones(len(pontos_proj_r[0]))], axis=0)
+	pontos_proj_l = np.append(pontos_proj_l,  [100*16*np.ones(len(pontos_proj_l[0]))], axis=0)
 
-	print('wl',a*pontos_proj_l[:,12]+c*w)
+	matrix_orig = np.empty((3 ,len(pontos_proj_l[0])), float)
+	for i in range(len(pontos_proj_l[0])):
+		ponto = a*pontos_proj_l[:,i]+c*w
+		ponto[1] += 20
+		ponto[0] += 22
+		ponto = np.array(ponto).reshape(3,1)
+		print(ponto)
+		matrix_orig = np.hstack((matrix_orig, ponto))
+
+	H = proj.homogenea(rotx, roty, rotz, dx, dy, dz)
+	Pc = proj.mundo_para_camera(matrix_orig,H)
+	pj = proj.proj_perspectiva_mm(Pc, f)
+
+	pontos_proj_l, zl = proj.proj_perspectiva_pixel(pj, sx, sy, ox, oy)
+	proj.print_in_screen(pontos_proj_l)
+
+
+
+	
+
+
 	pontos_proj_r = np.append(pontos_proj_r, [100*16*np.ones(len(pontos_proj_r[0]))], axis=0)
-	print('wr',t+b*np.matmul(np.matrix.transpose(r),pontos_proj_r[:,12]))
+	matrix_orig = np.empty((3 ,len(pontos_proj_r[0])), float)
+	for i in range(len(pontos_proj_r[0])):
+		ponto = t+b*np.matmul(np.matrix.transpose(r),pontos_proj_r[:,i])
+		ponto[1] += 20
+		ponto[0] += 22
+		ponto = np.array(ponto).reshape(3,1)
+		print(ponto)
+		matrix_orig = np.hstack((matrix_orig, ponto))
+
+	rotx, roty, rotz, dx, dy, dz = [0 , 0, 0, 5, 5 ,100]
+	H = proj.homogenea(rotx, roty, rotz, dx, dy, dz)
+	Pc = proj.mundo_para_camera(matrix_orig,H)
+	pj = proj.proj_perspectiva_mm(Pc, f)
+
+	pontos_proj_l, zl = proj.proj_perspectiva_pixel(pj, sx, sy, ox, oy)
+	proj.print_in_screen(pontos_proj_l)
+
+

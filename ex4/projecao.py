@@ -296,3 +296,5 @@ class Projecao:
 		abc = np.linalg.solve(A,t)
 		print(abc)
 		return abc 
+
+	
